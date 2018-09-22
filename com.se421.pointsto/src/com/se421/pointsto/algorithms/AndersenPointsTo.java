@@ -83,12 +83,12 @@ public class AndersenPointsTo {
 	 * A helper method for saving the results as tags
 	 * 
 	 * 1) (REQUIRED) This converts points-to address sets to ALIAS_<address> tags
-	 * 2) (EXTRA CREDIT) This tags XCSG.TypeOf edges with INFERRED_TYPE_OF if the type 
-	 *    of edges is actually feasible according to the points-to analysis
+	 * 2) (EXTRA CREDIT) This creates and tags edges with INFERRED_TYPE_OF  
+	 *    corresponding to the type that is actually feasible according to 
+	 *    the points-to analysis
 	 */
 	private static void saveResults() {
 		AtlasSet<Node> pointsToSets = new AtlasHashSet<Node>(Common.universe().selectNode(POINTS_TO_SET).eval().nodes());
-		Q typeOfEdges = Common.universe().edgesTaggedWithAny(XCSG.TypeOf);
 		
 		// for each addressed node in the data flow graph
 		// convert the points-to addresses to alias tags
@@ -101,9 +101,11 @@ public class AndersenPointsTo {
 				// tag the inferred type of edges
 				Node runtimeType = getInstantiationType(address);
 				if(runtimeType != null) {
-					Edge runtimeTypeOfEdge = typeOfEdges.betweenStep(Common.toQ(variable), Common.toQ(runtimeType)).eval().edges().one();
-					if(runtimeTypeOfEdge != null){
-						runtimeTypeOfEdge.tag(PointsToAnalysis.INFERRED_TYPE_OF);
+					Edge inferredTypeOfEdge = Common.universe().edges(PointsToAnalysis.INFERRED_TYPE_OF)
+							.betweenStep(Common.toQ(variable), Common.toQ(runtimeType)).eval().edges().one();
+					if(inferredTypeOfEdge == null){
+						inferredTypeOfEdge = Graph.U.createEdge(variable, runtimeType);
+						inferredTypeOfEdge.tag(PointsToAnalysis.INFERRED_TYPE_OF);
 					}
 				}
 			}
